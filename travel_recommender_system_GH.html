@@ -1,0 +1,1395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=width=device-width, initial-scale=1.0">
+  <title>Travel Recommender System</title>
+  
+  <!-- Add Google Maps API -->
+  <script src="https://maps.googleapis.com/maps/api/js?key=GOOGLE_API_KEY&libraries=places"></script>
+  <style>
+    body {
+      font-family: 'Inter', Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      background-color: #d6fafd; /* Light orange */
+      color: #333;
+      line-height: 1.6;
+    }
+    header {
+      color: white;
+      text-align: center;
+      padding: 3rem 1rem;
+    }
+    footer {
+      color: rgb(48, 48, 52);
+      text-align: center;
+      padding: 3rem 1rem;
+    }
+    header h1, footer p {
+      margin: 0;
+    }
+    .container {
+      padding: 2rem;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    .form-section, .results-section, .map-section {
+      margin-bottom: 4rem;
+    }
+    .results-section h2 {
+      font-size: 2rem;
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    .card {
+      border: none;
+      border-radius: 10px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      background-color: #c9d4f383; /* Light yellow */
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+    }
+    .card img {
+      width: 100%;
+      border-radius: 10px;
+      margin-bottom: 1.5rem;
+    }
+    .card h3 {
+      font-family: 'Lora', serif;
+      font-size: 1.8rem;
+      margin-bottom: 1rem;
+    }
+    #map {
+      height: 400px;
+      width: 100%;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    footer p {
+      font-size: 0.9rem;
+    }
+    .language-switch {
+      text-align: right;
+      margin-bottom: 1rem;
+    }
+    .language-switch button {
+      background-color: #004080; /* Blue */
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+    .language-switch button:hover {
+      background-color: #ed3a3a; /* Lighter blue */
+    }
+    @media (max-width: 768px) {
+      .form-section input, .form-section select, .form-section button {
+        width: calc(100% - 2rem);
+        max-width: none;
+      }
+    }
+    .carousel {
+      position: relative;
+      width: 100%;
+      height: 100vh; /* Full screen height */
+      overflow: hidden;
+    }
+    .carousel-item {
+      display: none;
+      position: absolute;
+      width: 100%;
+      height: 100%;
+    }
+    .carousel-item.active {
+      display: block;
+    }
+    .carousel img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover; /* Ensures the image covers the entire area */
+    }
+    .carousel-control {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      background-color: rgba(0, 0, 0, 0.5);
+      color: white;
+      border: none;
+      padding: 10px;
+      cursor: pointer;
+      font-size: 18px;
+      z-index: 10;
+    }
+    .carousel-control.prev {
+      left: 10px;
+    }
+    .carousel-control.next {
+      right: 10px;
+    }
+    .carousel-caption {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: white;
+      font-size: 2.5rem;
+      font-weight: bold;
+      text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.7);
+      z-index: 20;
+    }
+    .form-section {
+      background-color: #ffffff; /* White background */
+      border-radius: 10px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      padding: 2rem;
+      max-width: 800px;
+      margin: 2rem auto;
+    }
+    .form-section h2 {
+      font-size: 2.5rem;
+      font-weight: bold;
+      color: #333;
+      margin-bottom: 1.5rem;
+      text-align: center;
+    }
+    .form-group {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      margin-bottom: 1.5rem;
+    }
+    .form-group label {
+      font-size: 1rem;
+      font-weight: bold;
+      color: #555;
+      margin-bottom: 0.5rem;
+      display: block;
+    }
+    .form-group select,
+    .form-group input,
+    .form-group button {
+      width: calc(48% - 1rem);
+      padding: 0.8rem;
+      font-size: 1rem;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      margin-bottom: 1rem;
+    }
+    .form-group select:focus,
+    .form-group input:focus,
+    .form-group button:focus {
+      outline: none;
+      border-color: #4599ee;
+      box-shadow: 0 0 5px rgba(69, 153, 238, 0.5);
+    }
+    .form-group button {
+      background-color: #4599ee;
+      color: white;
+      border: none;
+      cursor: pointer;
+      transition: background-color 0.3s ease, transform 0.2s ease;
+    }
+    .form-group button:hover {
+      background-color: #3693f0;
+      transform: scale(1.05);
+    }
+    .checkbox-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .checkbox-group label {
+      font-size: 1rem;
+      color: #555;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .checkbox-group input {
+      width: auto;
+      margin: 0;
+    }
+    /* Add playful font style for itinerary */
+    .itinerary-day h3 {
+      font-family: 'Comic Sans MS', 'Comic Sans', cursive; /* Playful font */
+      font-size: 2rem;
+      color: #ff6f61; /* Soft coral color */
+      text-align: center;
+      margin-bottom: 1.5rem;
+    }
+    .itinerary-day .activity-card {
+      font-family: 'Comic Sans MS', 'Comic Sans', cursive; /* Match playful font */
+      font-size: 1.2rem;
+      color: #333;
+      background-color: #fff5e6; /* Light peach background */
+      border-radius: 10px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .itinerary-day .activity-card.collapsed {
+      max-height: 3rem;
+      overflow: hidden;
+    }
+    .itinerary-day .activity-card h4::after {
+      content: " ▼";
+      font-size: 0.8rem;
+      color: #555;
+    }
+    .itinerary-day .activity-card.collapsed h4::after {
+      content: " ▶";
+    }
+    .itinerary-day .activity-card h4 {
+      font-size: 1.5rem;
+      color: #ff6f61; /* Match coral color */
+      margin-bottom: 0.5rem;
+    }
+    .itinerary-day .activity-card p {
+      margin: 0.5rem 0;
+    }
+    /* Enhanced styles for the latest news section */
+    .latest-news {
+      position: fixed;
+      top: 10%;
+      right: -300px; /* Initially hidden */
+      width: 300px;
+      background: linear-gradient(135deg, #f9f9f9, #e6f7ff); /* Gradient background */
+      border-left: 3px solid #4599ee;
+      padding: 1rem;
+      box-shadow: -2px 0 10px rgba(0, 0, 0, 0.2);
+      overflow-y: auto;
+      max-height: 80%;
+      transition: right 0.3s ease; /* Smooth transition */
+      border-radius: 10px 0 0 10px; /* Rounded corners on the left */
+    }
+    .latest-news.open {
+      right: 0; /* Slide in when open */
+    }
+    .latest-news h3 {
+      font-size: 1.8rem;
+      font-weight: bold;
+      color: #004080;
+      text-align: center;
+      margin-bottom: 1rem;
+      font-family: 'Lora', serif;
+    }
+    .latest-news ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .latest-news li {
+      margin-bottom: 1.5rem;
+      padding: 0.5rem;
+      background-color: #ffffff;
+      border-radius: 5px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .latest-news li:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    }
+    .latest-news a {
+      text-decoration: none;
+      color: #4599ee;
+      font-weight: bold;
+      font-family: 'Inter', Arial, sans-serif;
+      display: block;
+      margin-bottom: 0.3rem;
+    }
+    .latest-news a:hover {
+      text-decoration: underline;
+    }
+    .latest-news .news-date {
+      font-size: 0.9rem;
+      color: #666;
+      font-style: italic;
+    }
+    /* Update styles for the toggle button */
+    .latest-news-toggle {
+      position: fixed;
+      top: 10%;
+      right: 0;
+      background-color: #004080;
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 5px 0 0 5px; /* Rounded corners on the left */
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-family: 'Inter', Arial, sans-serif;
+      box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1);
+      z-index: 1000; /* Ensure it stays above other elements */
+      transition: background-color 0.3s ease, transform 0.2s ease;
+    }
+    .latest-news-toggle:hover {
+      background-color: #3693f0;
+      transform: scale(1.05);
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div id="carousel" class="carousel">
+      <div class="carousel-item active">
+        <img src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1920" alt="Ocean View 1">
+      </div>
+      <div class="carousel-item">
+        <img src="https://images.unsplash.com/photo-1493558103817-58b2924bce98?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1920" alt="Ocean View 2">
+      </div>
+      <div class="carousel-item">
+        <img src="https://images.unsplash.com/photo-1506748686214-e9df14d4d9d0?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1920" alt="Ocean View 3">
+      </div>
+      <div class="carousel-caption">A Wonderful Journey</div>
+      <button class="carousel-control prev" onclick="prevSlide()">&#10094;</button>
+      <button class="carousel-control next" onclick="nextSlide()">&#10095;</button>
+    </div>
+  </header>
+  <div class="container">
+    <div class="language-switch">
+      <button onclick="switchLanguage('en')">English</button>
+      <button onclick="switchLanguage('zh')">中文</button>
+    </div>
+    <!-- 使用者輸入表單 -->
+    <div class="form-section">
+      <h2 id="form-title">Enter Your Travel Preferences</h2>
+      <div class="form-group">
+        <label for="departure">Departure City</label>
+        <select id="departure">
+          <option value="" disabled selected>Select Departure City</option>
+          <optgroup label="Ireland">
+            <option value="Dublin">Dublin</option>
+            <option value="Cork">Cork</option>
+            <option value="Galway">Galway</option>
+          </optgroup>
+          <optgroup label="United Kingdom">
+            <option value="London">London</option>
+            <option value="Manchester">Manchester</option>
+            <option value="York">York</option>
+            <option value="Edinburgh">Edinburgh</option>
+            <option value="Birmingham">Birmingham</option>
+          </optgroup>
+          <optgroup label="France">
+            <option value="Paris">Paris</option>
+            <option value="Lyon">Lyon</option>
+            <option value="Nice">Nice</option>
+            <option value="Marseille">Marseille</option>
+            <option value="Toulouse">Toulouse</option>
+          </optgroup>
+          <optgroup label="Germany">
+            <option value="Berlin">Berlin</option>
+            <option value="Munich">Munich</option>
+            <option value="Frankfurt">Frankfurt</option>
+            <option value="Hamburg">Hamburg</option>
+            <option value="Cologne">Cologne</option>
+          </optgroup>
+          <optgroup label="Italy">
+            <option value="Rome">Rome</option>
+            <option value="Milan">Milan</option>
+            <option value="Venice">Venice</option>
+            <option value="Florence">Florence</option>
+            <option value="Naples">Naples</option>
+          </optgroup>
+          <optgroup label="Spain">
+            <option value="Madrid">Madrid</option>
+            <option value="Barcelona">Barcelona</option>
+            <option value="Seville">Seville</option>
+            <option value="Valencia">Valencia</option>
+            <option value="Bilbao">Bilbao</option>
+          </optgroup>
+          <optgroup label="Netherlands">
+            <option value="Amsterdam">Amsterdam</option>
+            <option value="Rotterdam">Rotterdam</option>
+            <option value="The Hague">The Hague</option>
+            <option value="Utrecht">Utrecht</option>
+            <option value="Eindhoven">Eindhoven</option>
+          </optgroup>
+          <optgroup label="Switzerland">
+            <option value="Zurich">Zurich</option>
+            <option value="Geneva">Geneva</option>
+            <option value="Bern">Bern</option>
+            <option value="Basel">Basel</option>
+            <option value="Lausanne">Lausanne</option>
+          </optgroup>
+          <optgroup label="Austria">
+            <option value="Vienna">Vienna</option>
+            <option value="Salzburg">Salzburg</option>
+            <option value="Innsbruck">Innsbruck</option>
+            <option value="Graz">Graz</option>
+            <option value="Linz">Linz</option>
+          </optgroup>
+          <optgroup label="Belgium">
+            <option value="Brussels">Brussels</option>
+            <option value="Antwerp">Antwerp</option>
+            <option value="Ghent">Ghent</option>
+            <option value="Bruges">Bruges</option>
+            <option value="Leuven">Leuven</option>
+          </optgroup>
+          <optgroup label="Portugal">
+            <option value="Lisbon">Lisbon</option>
+            <option value="Porto">Porto</option>
+            <option value="Faro">Faro</option>
+            <option value="Braga">Braga</option>
+            <option value="Coimbra">Coimbra</option>
+          </optgroup>
+          <optgroup label="Greece">
+            <option value="Athens">Athens</option>
+            <option value="Thessaloniki">Thessaloniki</option>
+            <option value="Heraklion">Heraklion</option>
+            <option value="Rhodes">Rhodes</option>
+            <option value="Patras">Patras</option>
+          </optgroup>
+          <!-- Add more European countries and cities as needed -->
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="destination">Destination City</label>
+        <select id="destination">
+          <option value="" disabled selected>Select Destination City</option>
+          <optgroup label="Ireland">
+            <option value="Dublin">Dublin</option>
+            <option value="Cork">Cork</option>
+            <option value="Galway">Galway</option>
+          </optgroup>
+          <optgroup label="United Kingdom">
+            <option value="London">London</option>
+            <option value="Manchester">Manchester</option>
+            <option value="York">York</option>
+            <option value="Edinburgh">Edinburgh</option>
+            <option value="Birmingham">Birmingham</option>
+          </optgroup>
+          <optgroup label="France">
+            <option value="Paris">Paris</option>
+            <option value="Lyon">Lyon</option>
+            <option value="Nice">Nice</option>
+            <option value="Marseille">Marseille</option>
+            <option value="Toulouse">Toulouse</option>
+          </optgroup>
+          <optgroup label="Germany">
+            <option value="Berlin">Berlin</option>
+            <option value="Munich">Munich</option>
+            <option value="Frankfurt">Frankfurt</option>
+            <option value="Hamburg">Hamburg</option>
+            <option value="Cologne">Cologne</option>
+          </optgroup>
+          <optgroup label="Italy">
+            <option value="Rome">Rome</option>
+            <option value="Milan">Milan</option>
+            <option value="Venice">Venice</option>
+            <option value="Florence">Florence</option>
+            <option value="Naples">Naples</option>
+          </optgroup>
+          <optgroup label="Spain">
+            <option value="Madrid">Madrid</option>
+            <option value="Barcelona">Barcelona</option>
+            <option value="Seville">Seville</option>
+            <option value="Valencia">Valencia</option>
+            <option value="Bilbao">Bilbao</option>
+          </optgroup>
+          <optgroup label="Netherlands">
+            <option value="Amsterdam">Amsterdam</option>
+            <option value="Rotterdam">Rotterdam</option>
+            <option value="The Hague">The Hague</option>
+            <option value="Utrecht">Utrecht</option>
+            <option value="Eindhoven">Eindhoven</option>
+          </optgroup>
+          <optgroup label="Switzerland">
+            <option value="Zurich">Zurich</option>
+            <option value="Geneva">Geneva</option>
+            <option value="Bern">Bern</option>
+            <option value="Basel">Basel</option>
+            <option value="Lausanne">Lausanne</option>
+          </optgroup>
+          <optgroup label="Austria">
+            <option value="Vienna">Vienna</option>
+            <option value="Salzburg">Salzburg</option>
+            <option value="Innsbruck">Innsbruck</option>
+            <option value="Graz">Graz</option>
+            <option value="Linz">Linz</option>
+          </optgroup>
+          <optgroup label="Belgium">
+            <option value="Brussels">Brussels</option>
+            <option value="Antwerp">Antwerp</option>
+            <option value="Ghent">Ghent</option>
+            <option value="Bruges">Bruges</option>
+            <option value="Leuven">Leuven</option>
+          </optgroup>
+          <optgroup label="Portugal">
+            <option value="Lisbon">Lisbon</option>
+            <option value="Porto">Porto</option>
+            <option value="Faro">Faro</option>
+            <option value="Braga">Braga</option>
+            <option value="Coimbra">Coimbra</option>
+          </optgroup>
+          <optgroup label="Greece">
+            <option value="Athens">Athens</option>
+            <option value="Thessaloniki">Thessaloniki</option>
+            <option value="Heraklion">Heraklion</option>
+            <option value="Rhodes">Rhodes</option>
+            <option value="Patras">Patras</option>
+          </optgroup>
+          <!-- Add more European countries and cities as needed -->
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="travelDate">Travel Date</label>
+        <input type="date" id="travelDate">
+      </div>
+      <div class="form-group">
+        <label for="days">Number of Days</label>
+        <input type="number" id="days" placeholder="Number of Days">
+      </div>
+      <div class="form-group">
+        <label for="budget">Budget (€)</label>
+        <select id="budget">
+          <option value="" disabled selected>Select Budget (€)</option>
+          <option value="500">€500</option>
+          <option value="1000">€1000</option>
+          <option value="1500">€1500</option>
+          <option value="2000">€2000</option>
+          <option value="3000">€3000+</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="interest">Travel Preferences</label>
+        <div class="checkbox-group" id="interest">
+          <label><input type="checkbox" value="nature"> Nature</label>
+          <label><input type="checkbox" value="culture"> Culture</label>
+          <label><input type="checkbox" value="food"> Food</label>
+          <label><input type="checkbox" value="history"> History</label>
+          <label><input type="checkbox" value="shopping"> Shopping</label>
+          <label><input type="checkbox" value="adventure"> Adventure</label>
+          <label><input type="checkbox" value="beach"> Beach</label>
+          <label><input type="checkbox" value="nightlife"> Nightlife</label>
+          <label><input type="checkbox" value="art_gallery"> Art Gallery</label>
+          <label><input type="checkbox" value="museum"> Museum</label>
+          <!-- Add more Google Place types as needed -->
+        </div>
+      </div>
+      <div class="form-group">
+        <button onclick="generateRecommendations()">Generate Recommendations</button>
+      
+    </div>
+    
+      <label type="text" id="log_txt2" placeholder="LOG2" style="display: none;"></label>
+
+    <!-- 推薦結果區 -->
+    <div class="results-section" id="results">
+      <h2 id="results-title">Recommended Itineraries</h2>
+      <div id="recommendation1" class="card" style="display: none;"></div>
+      <button onclick="exportToPDF()">Export to PDF</button>
+    </div>
+
+    <!-- 地圖動畫區 -->
+    <div class="map-section">
+      <h2 id="map-title">Travel Map</h2>
+      <div id="map"></div>
+    </div>
+  </div>
+  <button class="latest-news-toggle" onclick="toggleLatestNews()">News</button>
+  <div class="latest-news" id="latest-news">
+    <h3>Latest News</h3>
+    <ul id="news-list">
+      <li>Loading news...</li>
+    </ul>
+  </div>
+  <footer>
+    <p>&copy; 2025 Travel Recommender System. All rights reserved.</p>
+  </footer>
+
+  <script>
+    const translations = {
+      en: {
+        headerTitle: "A Wonderful Journey",
+        formTitle: "Enter Your Travel Preferences",
+        resultsTitle: "Recommended Itineraries",
+        mapTitle: "Travel Map",
+      },
+      zh: {
+        headerTitle: "A Wonderful Journey",
+        formTitle: "輸入旅遊需求",
+        resultsTitle: "推薦行程",
+        mapTitle: "旅遊地圖",
+      }
+    };
+
+    function switchLanguage(lang) {
+      document.querySelector('.carousel-caption').textContent = translations[lang].headerTitle; // Update header title
+      document.getElementById('form-title').textContent = translations[lang].formTitle;
+      document.getElementById('results-title').textContent = translations[lang].resultsTitle;
+      document.getElementById('map-title').textContent = translations[lang].mapTitle;
+
+      // Update form labels and placeholders
+      document.querySelector('label[for="departure"]').textContent = lang === 'en' ? "Departure City" : "出發城市";
+      document.querySelector('label[for="destination"]').textContent = lang === 'en' ? "Destination City" : "目的地城市";
+      document.querySelector('label[for="travelDate"]').textContent = lang === 'en' ? "Travel Date" : "旅遊日期";
+      document.querySelector('label[for="days"]').textContent = lang === 'en' ? "Number of Days" : "天數";
+      document.querySelector('label[for="budget"]').textContent = lang === 'en' ? "Budget (€)" : "預算 (€)";
+      document.querySelector('label[for="interest"]').textContent = lang === 'en' ? "Travel Preferences" : "旅遊偏好";
+
+      // Update placeholders
+      document.getElementById('departure').options[0].textContent = lang === 'en' ? "Select Departure City" : "選擇出發城市";
+      document.getElementById('destination').options[0].textContent = lang === 'en' ? "Select Destination City" : "選擇目的地城市";
+      document.getElementById('budget').options[0].textContent = lang === 'en' ? "Select Budget (€)" : "選擇預算 (€)";
+
+      // Update travel preferences options
+      const preferences = [
+        { en: "Nature", zh: "自然" },
+        { en: "Culture", zh: "文化" },
+        { en: "Food", zh: "美食" },
+        { en: "History", zh: "歷史" },
+        { en: "Shopping", zh: "購物" },
+        { en: "Adventure", zh: "冒險" },
+        { en: "Beach", zh: "海灘" },
+        { en: "Nightlife", zh: "夜生活" },
+        { en: "Art Gallery", zh: "藝術畫廊" },
+        { en: "Museum", zh: "博物館" }
+      ];
+
+      const interestLabels = document.querySelectorAll('#interest label');
+      interestLabels.forEach((label, index) => {
+        const checkbox = label.querySelector('input');
+        label.textContent = lang === 'en' ? preferences[index].en : preferences[index].zh;
+        label.prepend(checkbox); // Ensure the checkbox remains inside the label
+      });
+    }
+
+    const OPEN_WEATHER_API = "http://api.openweathermap.org/data/2.5/weather";
+    const OPEN_WEATHER_API_KEY = "OPEN_WEATHER_API_KEY";
+    const OPENAI_API_KEY = "OPENAI_API_KEY";
+    document.getElementById("log_txt2").textContent = "";
+
+
+    async function fetchWeatherForTravelDate(destination, travelDate, days) {
+      try {
+        updateLog(`Fetching weather data for ${destination} starting from ${travelDate} for ${days} days...`);
+
+        // Fetch weather forecast data
+        const response = await fetch(`https://api.openweathermap.org/data/2.5/forecast?q=${destination}&appid=${OPEN_WEATHER_API_KEY}&units=metric`);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch weather data: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        // Parse the travel date and calculate the range of dates
+        const startDate = new Date(travelDate);
+        const travelDates = Array.from({ length: days }, (_, i) => {
+          const date = new Date(startDate);
+          date.setDate(startDate.getDate() + i);
+          return date.toISOString().split("T")[0];
+        });
+
+        // Filter forecasts matching the travel dates
+        const forecasts = travelDates.map(date => {
+          const forecast = data.list.find(item => item.dt_txt.startsWith(date));
+          if (forecast) {
+            return {
+              Date: date,
+              Weather: forecast.weather[0].description,
+              Temperature: forecast.main.temp,
+              Feels_Like: forecast.main.feels_like,
+              Min_Temperature: forecast.main.temp_min,
+              Max_Temperature: forecast.main.temp_max,
+              Humidity: forecast.main.humidity,
+              Wind_Speed: forecast.wind.speed
+            };
+          } else {
+            return { Date: date, Weather: "No data available" };
+          }
+        });
+
+        updateLog(`Weather data fetched: ${JSON.stringify(forecasts)}`);
+
+        // Provide suggestions for each day's weather
+        // const suggestions = forecasts.map(weather => ({
+        //   Date: weather.Date,
+        //   Suggestions: generateWeatherSuggestions(weather)
+        // }));
+
+        //updateLog(`Weather suggestions: ${JSON.stringify(suggestions)}`);
+
+        return { forecasts};
+      } catch (error) {
+        updateLog(`Error fetching weather data: ${error.message}`, true);
+        return null;
+      }
+    }
+
+    async function fetchGooglePlaces(destination, interest) {
+      try {
+        updateLog(`Fetching places for: ${destination} (${interest})`);
+
+        // Initialize the Places Service without creating a Google Map
+        const service = new google.maps.places.PlacesService(document.createElement("div"));
+        updateLog(`Checking service: ${service}`);
+
+        // Define the query based on interest
+        let query;
+        switch (interest) {
+          case "nature":
+            query = `nature attractions in ${destination}`;
+            break;
+          case "culture":
+            query = `cultural sites in ${destination}`;
+            break;
+          case "food":
+            query = `popular restaurants in ${destination}`;
+            break;
+          case "history":
+            query = `historical sites in ${destination}`;
+            break;
+          case "shopping":
+            query = `shopping centers in ${destination}`;
+            break;
+          default:
+            query = `tourist attractions in ${destination}`;
+            interest = `tourist_attractions`;
+        }
+
+        updateLog(`Query: ${query}`);
+
+        // Use the Places SDK to search for places
+        const request = {
+          query: query,
+          fields: [
+            "name",
+            "formatted_address",
+            "rating",
+            "user_ratings_total",
+            "geometry",
+            "price_level",
+            "types",
+            "place_id",
+          ],
+        };
+
+        const attractions = await new Promise((resolve, reject) => {
+          service.textSearch(request, async (results, status) => {
+            if (status === google.maps.places.PlacesServiceStatus.OK) {
+              const mappedResults = results.map((place) => ({
+                Attraction_Name: place.name,
+                Attraction_Address: place.formatted_address,
+                Attraction_Rating: place.rating || "N/A",
+                User_Ratings_Total: place.user_ratings_total || 0,
+                Attraction_Latitude: place.geometry?.location?.lat(),
+                Attraction_Longitude: place.geometry?.location?.lng(),
+                Price_Level: place.price_level || "N/A",
+                Availability: "Available",
+                Attraction_Country: destination,
+                Attraction_Type: place.types.join(", "),
+                Place_ID: place.place_id,
+              }));
+              resolve(mappedResults);
+            } else if (status === google.maps.places.PlacesServiceStatus.REQUEST_DENIED) {
+              updateLog(`REQUEST_DENIED: ${query}. Falling back to fetchFallbackAttractions.`);
+              const fallbackAttractions = await fetchFallbackAttractions(destination, interest);
+              updateLog(`Fallback attractions: ${JSON.stringify(fallbackAttractions)}`);
+              resolve(fallbackAttractions);
+            } else {
+              updateLog(`Google Places API failed with status: ${status}. Falling back to fetchFallbackAttractions.`);
+              const fallbackAttractions = await fetchFallbackAttractions(destination, interest);
+              resolve(fallbackAttractions);
+            }
+          });
+        });
+
+        updateLog(`Fetched attractions: ${JSON.stringify(attractions)}`);
+        return attractions;
+      } catch (error) {
+        updateLog(`Error fetching places: ${error}. Falling back to fetchFallbackAttractions.`, true);
+        return await fetchFallbackAttractions(destination, interest);
+      }
+    }
+
+    async function fetchFallbackAttractions(destination, interest) {
+      try {
+        updateLog("Fetching attractions from fallback URL...");
+
+        // Fetch the JSON data from the provided URL
+        const response = await fetch("https://sarenahuang.github.io/jsonattraction/attractions_data_V3.JSON");
+        if (!response.ok) {
+          throw new Error("Failed to fetch fallback attractions data.");
+        }
+
+        const data = await response.json();
+
+        // Filter attractions based on the destination and interest
+        let filteredAttractions = data.filter(
+          (attraction) =>
+            attraction.Address?.toLowerCase().includes(destination.toLowerCase()) &&
+            (!interest || attraction.Type?.toLowerCase() === interest.toLowerCase())
+        );
+
+        // If no attractions are found, relax the filtering to include all attractions in the destination
+        if (filteredAttractions.length === 0) {
+          updateLog(`No attractions found for destination: ${destination} and interest: ${interest}. Relaxing filter criteria.`);
+          filteredAttractions = data.filter((attraction) =>
+            attraction.Address?.toLowerCase().includes(destination.toLowerCase())
+          );
+        }
+
+        if (filteredAttractions.length === 0) {
+          throw new Error(`No attractions found for destination: ${destination}`);
+        }
+
+        // Map the filtered attractions to match the expected format
+        const mappedAttractions = filteredAttractions.map((attraction) => ({
+          Attraction_Name: attraction.Name,
+          Attraction_Address: attraction.Address,
+          Attraction_Rating: attraction.Rating || "N/A",
+          User_Ratings_Total: attraction["User Ratings Total"] || 0,
+          Attraction_Latitude: attraction.Latitude,
+          Attraction_Longitude: attraction.Longitude,
+          Price_Level: attraction["Price Level"] || "N/A",
+          Availability: attraction.Availability || "N/A",
+          Attraction_Country: attraction.Country,
+          Attraction_Type: attraction.Type,
+        }));
+
+        updateLog(`Fetched fallback attractions: ${JSON.stringify(mappedAttractions)}`);
+        return mappedAttractions;
+      } catch (error) {
+        updateLog(`Error fetching fallback attractions: ${error.message}`, true);
+        return [];
+      }
+    }
+
+    function updateLog(message, isError = false) {
+      const timestamp = new Date().toLocaleTimeString();
+      const logEntry = `[${timestamp}] ${message}\n`;
+      const logElement = document.getElementById("log_txt2");
+
+      if (isError) {
+        console.error(logEntry);
+        logElement.textContent += `ERROR: ${logEntry}`;
+      } else {
+        console.log(logEntry);
+        logElement.textContent += logEntry;
+      }
+
+      // Auto-scroll to bottom
+      logElement.scrollTop = logElement.scrollHeight;
+    }
+
+    async function analyzeItinerary(data) {
+  try {
+    updateLog("Generating itinerary with OpenAI");
+
+    const prompt = `
+Please generate a detailed ${data.days}-day travel itinerary for ${data.destination} starting from ${data.travelDate} with a total budget of €${data.budget}.
+Select an appropriate number of attractions from the following list, ensuring no duplicates: ${data.attractions.map(a => a.Attraction_Name).join(', ')}.
+
+Each attraction includes name, address, rating, latitude, longitude, and estimated cost.
+
+The itinerary should:
+- Prioritize attractions and activities that match the user's travel preferences: ${data.interests.join(', ')}.
+- Group attractions logically based on proximity (using lat/lng).
+- Optimize travel time between locations.
+- Include appropriate transportation options.
+- Recommend time slots and activity durations.
+- Include meal suggestions (restaurant name, address, estimated cost).
+- Suggest accommodations (name, address, estimated cost).
+- Include flight details (flight number, departure/arrival times, ticket price).
+- Provide weather tips and travel advice based on the following weather data:
+${data.weather.forecasts.map(forecast => `
+  Date: ${forecast.Date}
+  Weather: ${forecast.Weather}
+  Temperature: ${forecast.Temperature}°C
+  Feels Like: ${forecast.Feels_Like}°C
+  Min Temperature: ${forecast.Min_Temperature}°C
+  Max Temperature: ${forecast.Max_Temperature}°C
+  Humidity: ${forecast.Humidity}%
+  Wind Speed: ${forecast.Wind_Speed} m/s
+`).join('\n')}
+
+Return ONLY valid JSON in this exact format:
+{
+  "itinerary": [
+    {
+      "day": 1,
+      "date": "YYYY-MM-DD",
+      "activities": [
+        {
+          "time": "09:00-10:30",
+          "activity": "Visit attraction",
+          "attraction": {
+            "name": "Attraction Name",
+            "address": "Attraction Address",
+            "rating": 4.5,
+            "latitude": 53.2707,
+            "longitude": -9.0568
+          },
+          "transportation": "Walk",
+          "duration": "1.5 hours",
+          "restaurant": {
+            "name": "Restaurant Name",
+            "address": "Restaurant Address",
+            "estimated_cost": "€20"
+          },
+          "accommodation": {
+            "name": "Hotel Name",
+            "address": "Hotel Address",
+            "estimated_cost": "€100"
+          },
+          "weather": "Bring an umbrella in case of rain",
+          "tips": "Buy tickets in advance to avoid queues"
+        }
+      ]
+    }
+  ]
+}`;
+
+    updateLog("OpenAI Prompt: " + prompt);
+
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${OPENAI_API_KEY}`
+      },
+      body: JSON.stringify({
+        model: "gpt-3.5-turbo",
+        messages: [
+          {
+            role: "system",
+            content: "You are a professional travel assistant generating optimized and detailed itineraries in strict JSON only. Do not include explanations or markdown."
+          },
+          { role: "user", content: prompt }
+        ],
+        temperature: 0.7,
+        max_tokens: 2000
+      })
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      console.error("API Error:", error);
+      throw new Error(error.error?.message || "OpenAI API error");
+    }
+
+    const result = await response.json();
+    console.log("API Response:", result);
+
+    const rawContent = result.choices[0]?.message?.content?.trim();
+
+    if (!rawContent) {
+      throw new Error("No content generated by OpenAI.");
+    }
+
+    // Extract valid JSON from content
+    const jsonStart = rawContent.indexOf('{');
+    const jsonEnd = rawContent.lastIndexOf('}');
+    const jsonString = rawContent.substring(jsonStart, jsonEnd + 1);
+
+    let itineraryData;
+    try {
+      itineraryData = JSON.parse(jsonString);
+
+      // Adjust the dates in the itinerary to match the user's selected travel date
+      const startDate = new Date(data.travelDate);
+      itineraryData.itinerary.forEach((day, index) => {
+        const currentDate = new Date(startDate);
+        currentDate.setDate(startDate.getDate() + index);
+        day.date = currentDate.toISOString().split("T")[0];
+      });
+
+    } catch (jsonError) {
+      console.error("JSON Parsing Error:", jsonError);
+      console.log("Raw JSON string:", jsonString);
+      throw new Error("Invalid JSON format returned from OpenAI.");
+    }
+
+    updateLog("Itinerary result: " + JSON.stringify(itineraryData));
+    return itineraryData;
+
+  } catch (error) {
+    updateLog("Error generating itinerary: " + error.message, true);
+    return null;
+  }
+}
+
+
+    // Function to format and display the itinerary in a table format
+    function formatItineraryByDays(itineraryArray) {
+  const formattedBlocks = [];
+  const attractionsForMap = [];
+
+  itineraryArray.forEach(day => {
+    const dayTitle = `Day ${day.day} - ${day.date}`;
+    let activityCards = '';
+
+    day.activities.forEach(activity => {
+      // Collect coordinates for the map
+      if (activity.attraction?.latitude && activity.attraction?.longitude) {
+        attractionsForMap.push({
+          name: activity.attraction.name,
+          latitude: activity.attraction.latitude,
+          longitude: activity.attraction.longitude
+        });
+      }
+
+      const location = activity.attraction?.name || activity.restaurant?.name || activity.accommodation?.name || "N/A";
+      const address = activity.attraction?.address || activity.restaurant?.address || activity.accommodation?.address || "";
+      const restaurantInfo = activity.restaurant ? `${activity.restaurant.name}, ${activity.restaurant.address}, Cost: ${activity.restaurant.estimated_cost}` : "N/A";
+      const accommodationInfo = activity.accommodation ? `${activity.accommodation.name}, ${activity.accommodation.address}, Cost: ${activity.accommodation.estimated_cost}` : "N/A";
+
+      activityCards += `
+        <div class="activity-card collapsed" onclick="toggleActivityCard(event)">
+          <h4>${activity.time} - ${activity.activity}</h4>
+          <p><strong>Location:</strong> ${location}</p>
+          <p><strong>Address:</strong> ${address}</p>
+          <p><strong>Transportation:</strong> ${activity.transportation || "N/A"}</p>
+          <p><strong>Duration:</strong> ${activity.duration || "N/A"}</p>
+          <p><strong>Restaurant:</strong> ${restaurantInfo}</p>
+          <p><strong>Accommodation:</strong> ${accommodationInfo}</p>
+          <p><strong>Weather:</strong> ${activity.weather || "N/A"}</p>
+          <p><strong>Tips:</strong> ${activity.tips || "N/A"}</p>
+        </div>
+      `;
+    });
+
+    formattedBlocks.push(`
+      <div class="card itinerary-day">
+        <h3>${dayTitle}</h3>
+        ${activityCards}
+        
+      </div>
+    `);
+  });
+
+  // Pin attractions on the map
+  pinAttractionsOnGoogleMap(attractionsForMap);
+
+  return formattedBlocks.join('');
+}
+
+
+
+    // Function to pin attractions on the Google Map
+    function pinAttractionsOnGoogleMap(attractions) {
+      if (!googleMap) {
+        initGoogleMap(); // Ensure the map is initialized
+      }
+
+      const bounds = new google.maps.LatLngBounds();
+
+      attractions.forEach((attraction) => {
+        const { name, latitude, longitude } = attraction;
+
+        if (
+          typeof latitude === "number" &&
+          typeof longitude === "number" &&
+          !isNaN(latitude) &&
+          !isNaN(longitude)
+        ) {
+          const marker = new google.maps.Marker({
+            position: { lat: latitude, lng: longitude },
+            map: googleMap,
+            title: name || "Unnamed Location",
+          });
+
+          const infoWindow = new google.maps.InfoWindow({
+            content: `<strong>${name || "Unnamed Location"}</strong>`,
+          });
+
+          marker.addListener("click", () => {
+            infoWindow.open(googleMap, marker);
+          });
+
+          bounds.extend(marker.getPosition());
+        } else {
+          console.warn("Invalid coordinates for attraction:", attraction);
+        }
+      });
+
+      // Adjust the map view to fit all markers
+      if (!bounds.isEmpty()) {
+        googleMap.fitBounds(bounds);
+      }
+    }
+
+    function toggleActivityCard(event) {
+      const card = event.currentTarget;
+      card.classList.toggle('collapsed');
+    }
+
+    async function generateRecommendations() {
+      document.getElementById("log_txt2").textContent += "Generating recommendations...";
+      const departure = document.getElementById('departure').value;
+      const destination = document.getElementById('destination').value;
+      const travelDate = document.getElementById('travelDate').value;
+      const days = parseInt(document.getElementById('days').value, 10);
+      const budget = parseFloat(document.getElementById('budget').value);
+      const interests = Array.from(document.querySelectorAll('#interest input:checked')).map(input => input.value);
+
+      if (!departure || !destination || !travelDate || !days || !budget || interests.length === 0) {
+        alert('Please fill in all fields!');
+        return;
+      }
+
+      let logData = "Debug Log:\n";
+
+      // Override console.log to capture logs
+      const originalConsoleLog = console.log;
+      console.log = function (...args) {
+        logData += `LOG: ${args.join(' ')}\n`;
+        document.getElementById("log_txt2").textContent += `LOG: ${args.join(' ')}\n`;
+        originalConsoleLog.apply(console, args);
+      };
+
+      try {
+        // Hide the "Recommended Itinerary" section while generating
+        document.getElementById('results').style.display = 'none';
+
+        console.log(`User clicked 'Generate Recommendations' at ${new Date().toISOString()}`);
+        console.log(`Input Data: Departure=${departure}, Destination=${destination}, TravelDate=${travelDate}, Days=${days}, Budget=${budget}, Interests=${interests}`);
+        document.getElementById("log_txt2").textContent += `User clicked 'Generate Recommendations' at ${new Date().toISOString()}\n`;
+
+        const weather = await fetchWeatherForTravelDate(destination, travelDate, days);
+        updateLog(`Weather data fetched: ${JSON.stringify(weather)}`);
+
+        // Fetch attraction data using Google Places API
+        document.getElementById("log_txt2").textContent += "Fetching attractions data...";
+        const attractions = await fetchGooglePlaces(destination, interests.join(','));
+        
+        if (!attractions || attractions.length === 0) {
+          updateLog(`No attractions found.`);
+          throw new Error("No attractions found.");
+        }
+        document.getElementById("log_txt2").textContent += `002 Attractions data fetched: ${JSON.stringify(attractions)}\n`;
+        console.log("Attractions data fetched:", attractions);
+
+        // Check if the budget is reasonable
+        const estimatedBudget = days * 100; // Example: €100 per day
+        if (budget < estimatedBudget) {
+          alert(`Your budget seems too low for ${days} days in ${destination}. We recommend a budget of at least €${estimatedBudget}. A sample itinerary will still be provided.`);
+        }
+
+        // Combine user inputs and attraction data
+        const combinedData = {
+          departure,
+          destination,
+          travelDate,
+          days,
+          budget,
+          interests,
+          weather,
+          attractions
+        };
+
+        const itineraryAnalysis = await analyzeItinerary(combinedData);
+        updateLog("Itinerary analysis completed: " + itineraryAnalysis);
+
+        // Display the itinerary in the UI
+        if (itineraryAnalysis && itineraryAnalysis.itinerary) {
+  document.getElementById('results').innerHTML = `
+    <h2 id="results-title">Recommended Itinerary</h2>
+    ${formatItineraryByDays(itineraryAnalysis.itinerary)}
+  `;
+          document.getElementById('results').style.display = 'block'; // Show the section
+          document.getElementById('results').scrollIntoView({ behavior: 'smooth' }); // Ensure visibility
+        } else {
+          alert("No itinerary generated. Please try again.");
+        }
+
+       
+
+        console.log("Itinerary generation completed successfully.");
+        document.getElementById("log_txt2").textContent += "1 Itinerary generation completed successfully.";
+        
+      } catch (error) {
+        console.error("Error generating recommendations:", error.message);
+        logData += `ERROR: ${error.message}\nSTACK TRACE: ${error.stack}\n`;
+        alert("Failed to generate recommendations. Please check the console for details.");
+        
+        document.getElementById("log_txt2").textContent += `2ERROR: ${error.message}\nSTACK TRACE: ${error.stack}\n`;
+      } finally {
+        // Display logData in the log_txt input field
+        
+        document.getElementById("log_txt2").textContent += `3error`;
+
+        await saveLogToFile(logData);
+        // Restore original console.log
+        console.log = originalConsoleLog;
+      }
+    }
+
+    let googleMap; // Declare Google Map globally
+    let userMarker; // Marker for user's location
+
+    // Initialize Google Map
+    function initGoogleMap() {
+      const defaultLocation = { lat: 51.505, lng: -0.09 }; // Default to London if geolocation fails
+
+      // Create the map
+      googleMap = new google.maps.Map(document.getElementById("map"), {
+        center: defaultLocation,
+        zoom: 6,
+      });
+
+      // Try to get the user's location
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const userLatLng = {
+              lat: position.coords.latitude,
+              lng: position.coords.longitude,
+            };
+
+            // Center the map on the user's location
+            googleMap.setCenter(userLatLng);
+            googleMap.setZoom(10);
+
+            // Add a marker for the user's location
+            userMarker = new google.maps.Marker({
+              position: userLatLng,
+              map: googleMap,
+              title: "You are here",
+            });
+          },
+          () => {
+            console.warn("Geolocation failed. Using default location.");
+          }
+        );
+      }
+    }
+
+    // Update the map with a single attraction
+    function updateMapWithAttraction(name, latitude, longitude) {
+      if (!googleMap) {
+        initGoogleMap(); // Ensure the map is initialized
+      }
+
+      const marker = new google.maps.Marker({
+        position: { lat: latitude, lng: longitude },
+        map: googleMap,
+        title: name,
+      });
+
+      const infoWindow = new google.maps.InfoWindow({
+        content: `<strong>${name}</strong>`,
+      });
+
+      marker.addListener("click", () => {
+        infoWindow.open(googleMap, marker);
+      });
+    }
+
+    // Initialize the map on page load
+    document.addEventListener('DOMContentLoaded', () => {
+      // Hide the "Recommended Itinerary" section initially
+      document.getElementById('results').style.display = 'none';
+
+      initGoogleMap();
+    });
+
+    function exportToPDF() {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+
+      doc.text('Travel Recommendations', 10, 10);
+      doc.text(document.getElementById('recommendation1').innerText, 10, 20);
+
+      doc.save('travel_recommendations.pdf');
+    }
+
+    let currentSlide = 0;
+
+    function showSlide(index) {
+      const slides = document.querySelectorAll('.carousel-item');
+      slides.forEach((slide, i) => {
+        slide.classList.toggle('active', i === index);
+      });
+    }
+
+    function nextSlide() {
+      const slides = document.querySelectorAll('.carousel-item');
+      currentSlide = (currentSlide + 1) % slides.length;
+      showSlide(currentSlide);
+    }
+
+    function prevSlide() {
+      const slides = document.querySelectorAll('.carousel-item');
+      currentSlide = (currentSlide - 1 + slides.length) % slides.length;
+      showSlide(currentSlide);
+    }
+
+    // Initialize the first slide
+    document.addEventListener('DOMContentLoaded', () => {
+      showSlide(currentSlide);
+      initGoogleMap();
+    });
+
+    async function fetchRSSFeed() {
+      const rssUrl = "https://rss.nytimes.com/services/xml/rss/nyt/Europe.xml"; // Example RSS feed URL
+      const proxyUrl = "https://api.allorigins.win/get?url=" + encodeURIComponent(rssUrl); // Reliable proxy service
+
+      try {
+        const response = await fetch(proxyUrl);
+        if (!response.ok) {
+          throw new Error("Failed to fetch RSS feed");
+        }
+
+        const data = await response.json();
+        const parser = new DOMParser();
+        const xmlDoc = parser.parseFromString(data.contents, "text/xml");
+
+        const items = xmlDoc.querySelectorAll("item");
+        const newsList = document.getElementById("news-list");
+        newsList.innerHTML = ""; // Clear existing content
+
+        if (items.length === 0) {
+          throw new Error("No news items found");
+        }
+
+        items.forEach((item, index) => {
+          if (index >= 5) return; // Limit to 5 news items
+          const title = item.querySelector("title").textContent;
+          const link = item.querySelector("link").textContent;
+          const pubDate = new Date(item.querySelector("pubDate").textContent).toLocaleDateString();
+
+          const listItem = document.createElement("li");
+          listItem.innerHTML = `
+            <a href="${link}" target="_blank">${title}</a>
+            <div class="news-date">${pubDate}</div>
+          `;
+          newsList.appendChild(listItem);
+        });
+      } catch (error) {
+        console.error("Error fetching RSS feed:", error);
+        document.getElementById("news-list").innerHTML = "<li>Failed to load news. Please try again later.</li>";
+      }
+    }
+
+    // Fetch the RSS feed on page load
+    document.addEventListener("DOMContentLoaded", fetchRSSFeed);
+
+    function toggleLatestNews() {
+      const newsSection = document.getElementById("latest-news");
+      const toggleButton = document.querySelector(".latest-news-toggle");
+
+      if (newsSection.classList.contains("open")) {
+        newsSection.classList.remove("open");
+        toggleButton.style.right = "0"; // Move button back to the edge
+      } else {
+        newsSection.classList.add("open");
+        toggleButton.style.right = "300px"; // Move button with the news section
+      }
+    }
+  </script>
+</body>
+</html>
